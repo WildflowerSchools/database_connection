@@ -29,3 +29,24 @@ class DatabaseConnection:
             object_id_field_name (string): Name of the field containing the object ID for each datapoint
         """
         raise NotImplementedError('Method must be implemented by derived class')
+
+    def create_datapoint(
+        self,
+        data
+    ):
+        """
+        Write a datapoint to the database.
+
+        The data must be in the form of a dictionary with field names as keys
+        and data values as values.
+
+        To accomodate the widest range of implementations, the data values must
+        be serializable by both the standard JSON encoder and by their __str__
+        format (i.e., essentially built-in Python scalar types). Timestamp
+        values (if present) must be given as ISO-format strings. Lists are not
+        allowed (to accommodate simple implementation as a tabular database).
+
+        Parameters:
+            data (dict): Data to write to the database
+        """
+        raise NotImplementedError('Method must be implemented by derived class')
