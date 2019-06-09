@@ -45,3 +45,43 @@ class DatabaseConnectionMemory(DatabaseConnection):
         if other_field_names is not None:
             self.field_names += other_field_names
         self.data = []
+
+    def write_data(
+        self,
+        data
+    ):
+        """
+        Write data to the database.
+
+        The data must be in the form of a dictionary with field names as keys
+        and data values as values (for a single data point) or a simple list of
+        such objects (for multiple datapoints).
+
+        Data values must be serializable/deserializable by the standard JSON
+        interface. Any other type/format conversion must be implemented by the
+        derived class. Timestamp values (if present) must be given as ISO-format
+        strings. Lists are not allowed as data values (to accommodate simple
+        implementation as a tabular database).
+
+        Parameters:
+            data (dict or list of dict): Data to write to the database
+        """
+        if not isinstance(data, list):
+            print('Data is a singleton, not a list')
+            data = [data]
+        for datum in data:
+            if self.timestamp_field_name is not None and self.timestamp_field_name not in datum.keys():
+                raise ValueError('Timestamp field \'{}\' not found in datum {}'.format(
+                    self.timestamp_field_name,
+                    datum
+                ))
+            if self.object_id_field_name is not None and self.object_id_field_name not in datum.keys():
+                raise ValueError('Object ID field \'{}\' not found in datum {}'.format(
+                    self.object_id_field_name,
+                    datum
+                ))
+            new_datapoint = {}
+            for field_name in self.field_names:
+                if field_name in datum:
+                    new_datapoint[field_name] = datum[field_name]
+            self.data.append(new_datapoint)
