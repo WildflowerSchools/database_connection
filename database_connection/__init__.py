@@ -8,7 +8,8 @@ class DatabaseConnection:
     def __init__(
         self,
         timestamp_field_name = None,
-        object_id_field_name = None):
+        object_id_field_name = None,
+        other_field_names = None):
         """
         Constructor for DatabaseConnection.
 
@@ -24,9 +25,14 @@ class DatabaseConnection:
         and this will enable various object methods to access the data (e.g.,
         fetching all data associated with a specific list of object IDs).
 
+        The final argument contains the names of the remaining fields. Any
+        subsequent data sent to the database that is not associated with one of
+        the field names in these three arguments will be silently rejected.
+
         Parameters:
             timestamp_field_name (string): Name of the field containing the timestamp for each datapoint
             object_id_field_name (string): Name of the field containing the object ID for each datapoint
+            other_field_names (list of string): Names of the remaining fields
         """
         raise NotImplementedError('Method must be implemented by derived class')
 
@@ -41,10 +47,11 @@ class DatabaseConnection:
         and data values as values.
 
         To accomodate the widest range of implementations, the data values must
-        be serializable by both the standard JSON encoder and by their __str__
-        format (i.e., essentially built-in Python scalar types). Timestamp
-        values (if present) must be given as ISO-format strings. Lists are not
-        allowed (to accommodate simple implementation as a tabular database).
+        be serializable/deserializable by the standard JSON interface. Any other
+        type/format conversion must be implemented by the derived class.
+        Timestamp values (if present) must be given as ISO-format strings. Lists
+        are not allowed as data values (to accommodate simple implementation as
+        a tabular database).
 
         Parameters:
             data (dict): Data to write to the database
