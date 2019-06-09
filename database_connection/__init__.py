@@ -36,15 +36,16 @@ class DatabaseConnection:
         """
         raise NotImplementedError('Method must be implemented by derived class')
 
-    def create_datapoint(
+    def write_data(
         self,
         data
     ):
         """
-        Write a datapoint to the database.
+        Write data to the database.
 
         The data must be in the form of a dictionary with field names as keys
-        and data values as values.
+        and data values as values (for a single data point) or a simple list of
+        such objects (for multiple datapoints).
 
         To accomodate the widest range of implementations, the data values must
         be serializable/deserializable by the standard JSON interface. Any other
@@ -54,6 +55,6 @@ class DatabaseConnection:
         a tabular database).
 
         Parameters:
-            data (dict): Data to write to the database
+            data (dict or list of dict): Data to write to the database
         """
         raise NotImplementedError('Method must be implemented by derived class')
