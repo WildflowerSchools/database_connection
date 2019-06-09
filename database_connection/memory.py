@@ -67,7 +67,6 @@ class DatabaseConnectionMemory(DatabaseConnection):
             data (dict or list of dict): Data to write to the database
         """
         if not isinstance(data, list):
-            print('Data is a singleton, not a list')
             data = [data]
         for datum in data:
             if self.timestamp_field_name is not None and self.timestamp_field_name not in datum.keys():
