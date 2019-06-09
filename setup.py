@@ -10,6 +10,9 @@ setup(
     url='https://github.com/WildflowerSchools/database_connection',
     author='Ted Quinn',
     author_email='ted.quinn@wildflowerschools.org',
+    install_requires=[
+        'dateutil>=2.8.0'
+    ],
     keywords=['database'],
     classifiers=[
         'Intended Audience :: Developers',
