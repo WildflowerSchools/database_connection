@@ -58,3 +58,30 @@ class DatabaseConnection:
             data (dict or list of dict): Data to write to the database
         """
         raise NotImplementedError('Method must be implemented by derived class')
+
+    def fetch_data(
+        self,
+        start_time = None,
+        end_time = None,
+        object_ids = None,
+        fields = None
+    ):
+        """
+        Fetch data from the database.
+
+        Start time and end time must be ISO-format strings. If start time or end
+        time is specified and database does not have a designated timestamp
+        field, an exception will be generated.
+
+        If object IDs are specified and database does not have a designated
+        object ID field, an exception will be generated.
+
+        If fields are not specified, all fields are returned.
+
+        Parameters:
+            start_time (string): Return data with timestamps greater than or equal to this value
+            end_time (string): Return data with timestamps less than or equal to this value
+            object_ids (list): Return data for these object IDs
+            fields (list): Return data for these fields
+        """
+        raise NotImplementedError('Method must be implemented by derived class')
