@@ -17,6 +17,10 @@ class DatabaseConnection:
         and data values as values (for a single data point) or a simple list of
         such objects (for multiple datapoints).
 
+        If the database only accepts a fixed list of fields and a specified
+        field is not on that list, a warning will be generated but data
+        associated with that field name will otherwise be silently dropped.
+
         To accomodate the widest range of implementations, the data values must
         be serializable/deserializable by the standard JSON interface. Any other
         type/format conversion must be implemented by the derived class.
