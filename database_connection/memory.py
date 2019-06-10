@@ -9,8 +9,8 @@ class DatabaseConnectionMemory(DatabaseConnection):
     def __init__(
         self,
         timestamp_field_name = None,
-        object_id_field_name = None,
-        other_field_names = None):
+        object_id_field_name = None
+    ):
         """
         Constructor for DatabaseConnectionMemory.
 
@@ -26,25 +26,12 @@ class DatabaseConnectionMemory(DatabaseConnection):
         and this will enable various object methods to access the data (e.g.,
         fetching all data associated with a specific list of object IDs).
 
-        The final argument contains the names of the remaining fields. Any
-        subsequent data sent to the database that is not associated with one of
-        the field names in these three arguments will be silently rejected.
-
         Parameters:
             timestamp_field_name (string): Name of the field containing the timestamp for each datapoint
             object_id_field_name (string): Name of the field containing the object ID for each datapoint
-            other_field_names (list of string): Names of the remaining fields
         """
         self.timestamp_field_name = timestamp_field_name
         self.object_id_field_name = object_id_field_name
-        self.other_field_names = other_field_names
-        self.field_names = []
-        if timestamp_field_name is not None:
-            self.field_names += [timestamp_field_name]
-        if object_id_field_name is not None:
-            self.field_names += [object_id_field_name]
-        if other_field_names is not None:
-            self.field_names += other_field_names
         self.data = []
 
     def write_data(
@@ -80,11 +67,7 @@ class DatabaseConnectionMemory(DatabaseConnection):
                     self.object_id_field_name,
                     datum
                 ))
-            new_datapoint = {}
-            for field_name in self.field_names:
-                if field_name in datum:
-                    new_datapoint[field_name] = datum[field_name]
-            self.data.append(new_datapoint)
+            self.data.append(datum)
 
     def fetch_data(
         self,
