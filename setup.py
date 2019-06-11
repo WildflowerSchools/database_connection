@@ -11,7 +11,7 @@ setup(
     author='Ted Quinn',
     author_email='ted.quinn@wildflowerschools.org',
     install_requires=[
-        'dateutil>=2.8.0'
+        'python-dateutil>=2.8.0'
     ],
     keywords=['database'],
     classifiers=[
