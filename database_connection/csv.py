@@ -2,6 +2,7 @@ from . import DatabaseConnection
 import dateutil.parser
 import os
 import csv
+import time
 
 class DatabaseConnectionCSV(DatabaseConnection):
     """
@@ -136,20 +137,23 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        with open(self.path, mode = 'r', newline = '') as read_fh:
-            reader = csv.DictReader(read_fh)
-            with open('.temp.csv', 'w', newline = '') as write_fh:
-                writer = csv.DictWriter(write_fh, fieldnames = self.field_names)
-                writer.writeheader()
-                for string_dict in reader:
-                    value_dict = {field_name: self._convert_from_string(field_name, string_dict.get(field_name)) for field_name in self.field_names}
-                    if value_dict['timestamp'] > start_time:
-                        continue
-                    if value_dict['timestamp'] < end_time:
-                        continue
-                    if value_dict['object_id'] in object_ids:
-                        continue
-                    writer.writerow(string_dict)
+        read_fh = open(self.path, mode = 'r', newline = '')
+        reader = csv.DictReader(read_fh)
+        write_fh =  open('.temp.csv', 'w', newline = '')
+        writer = csv.DictWriter(write_fh, fieldnames = self.field_names)
+        writer.writeheader()
+        for string_dict in reader:
+            value_dict = {field_name: self._convert_from_string(field_name, string_dict.get(field_name)) for field_name in self.field_names}
+            if value_dict['timestamp'] > start_time:
+                continue
+            if value_dict['timestamp'] < end_time:
+                continue
+            if value_dict['object_id'] in object_ids:
+                continue
+            writer.writerow(string_dict)
+        write_fh.close()
+        read_fh.close()
+        time.sleep(1)
         os.replace('.temp.csv', self.path)
 
     def _convert_from_string(self, field_name, string):
