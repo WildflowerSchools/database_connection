@@ -115,6 +115,44 @@ class DatabaseConnection:
             object_ids
         )
 
+    def to_data_queue(
+        self,
+        start_time = None,
+        end_time = None,
+        object_ids = None
+    ):
+        """
+        Create an iterable which returns datapoints from the database in time order.
+
+        If specified, start time and end time must either be native Python
+        datetimes or strings which are parsable by dateutil.parser.parse(). If
+        they are timezone-naive, they are assumed to be UTC.
+
+        If start time is not specified, all data is returned back to earliest
+        data in database. If end time is not specified, all data is returned up
+        to most recent data in database. If object IDs are not specified, data
+        is returned for all objects.
+
+        Returns a DataQueue object which contains the requested data.
+
+        Parameters:
+            start_time (datetime or string): Beginning of timespan (default: None)
+            end_time (datetime or string): End of timespan (default: None)
+            object_ids (list of strings): Object IDs (default: None)
+
+        Returns:
+            (DataQueue): Iterator which contains the requested data
+        """
+        data = self.fetch_data_object_time_series(
+            start_time,
+            end_time,
+            object_ids
+        )
+        data_queue = DataQueue(
+            data = data
+        )
+        return data_queue
+
     def _python_datetime_utc(self, timestamp):
         try:
             if timestamp.tzinfo is None:
@@ -155,64 +193,29 @@ class DatabaseConnection:
     ):
         raise NotImplementedError('Specifics of communication with database must be implemented in child class')
 
-    # def to_data_queue(
-    #     self,
-    #     start_time = None,
-    #     end_time = None,
-    #     object_ids = None,
-    #     fields = None
-    # ):
-    #     """
-    #     Create an iterable which returns datapoints from the database in time order.
-    #
-    #     Start time and end time must be ISO-format strings. If start time or end
-    #     time is specified and database does not have a designated timestamp
-    #     field, an exception will be generated.
-    #
-    #     If object IDs are specified and database does not have a designated
-    #     object ID field, an exception will be generated.
-    #
-    #     If fields are not specified, all fields are returned.
-    #
-    #     If database does not have a designated timestamp field, an exception
-    #     will be generated.
-    #
-    #     Parameters:
-    #         start_time (string): Return data with timestamps greater than or equal to this value
-    #         end_time (string): Return data with timestamps less than or equal to this value
-    #         object_ids (list): Return data for these object IDs
-    #         fields (list): Return data for these fields
-    #
-    #     Returns:
-    #         (DataQueue): Data queue which contains datapoints from database that satisfy the criteria
-    #     """
-    #     raise NotImplementedError('Method must be implemented by derived class')
-
 class DataQueue:
     """
     Class to define an iterable which returns datapoints in time order.
-
-    All methods must be implemented by derived classes.
     """
     def __init__(
         self,
-        data,
-        timestamp_field_name
+        data
         ):
         """
-        Constructor for DataQueue
+        Constructor for DataQueue.
 
-        Data must be a simple list of dicts containing the datapoints (the
-        structure returned by DatabaseConnection.fetch_data()).
-
-        Every datapoint must contain a field with the specified timestamp field name.
+        Data must be in the format returned by
+        DatabaseConnection.fetch_data_object_time_series() (i.e., simple list of
+        dicts containing the datapoints; every datapoint must contain a
+        'timestamp' field in timezone-aware native Python datetime format).
 
         Parameters:
-            data (list of dict): Name of the field containing the timestamp for each datapoint
-            object_id_field_name (string): Name of the field containing the object ID for each datapoint
-            other_field_names (list of string): Names of the remaining fields
+            data (list of dict): Data to populate the queue
         """
-        raise NotImplementedError('Method must be implemented by derived class')
+        data.sort(key = lambda datapoint: datapoint['timestamp'])
+        self.data = data
+        self.num_datapoints = len(data)
+        self.next_data_pointer = 0
 
     def __iter__(self):
         return self
@@ -226,4 +229,9 @@ class DataQueue:
         Returns:
             (dict): Data associated with the next timestamp
         """
-        raise NotImplementedError('Method must be implemented by derived class')
+        if self.next_data_pointer >= self.num_datapoints:
+            raise StopIteration()
+        else:
+            datapoint = self.data[self.next_data_pointer]
+            self.next_data_pointer += 1
+            return datapoint
