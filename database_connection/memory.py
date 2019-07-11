@@ -1,118 +1,83 @@
 from . import DatabaseConnection
-from . import DataQueue
-import dateutil.parser
 
 class DatabaseConnectionMemory(DatabaseConnection):
     """
     Class to define a DatabaseConnection to a database in memory
     """
+
     def __init__(
         self,
-        timestamp_field_name = None,
-        object_id_field_name = None
+        time_series_database = True,
+        object_database = True
     ):
         """
         Constructor for DatabaseConnectionMemory.
 
-        If timestamp field name is specified, then database is assumed to be a
-        time series database, every datapoint written to the database must
-        contain a field with this name, and this will enable various
-        time-related methods to access the data (e.g., fetching a time span,
-        creating an iterator that returns data points in time order).
+        If time_series_database and object_database are both True, database is
+        an object time series database (e.g., a measurement database) and
+        datapoints are identified by timestamp and object ID.
 
-        If object ID field name is specified, then database is assumed to be
-        contain data associated with objects (e.g., measurement devices), every
-        datapoint written to the database must contain a field with this name,
-        and this will enable various object methods to access the data (e.g.,
-        fetching all data associated with a specific list of object IDs).
+        If object_database is True and time_series_database is False, database
+        is an object database (e.g., a device configuration database) and
+        datapoints are identified by object ID.
+
+        If time_series_database is True and object_database is False, behavior
+        is not defined (for now).
 
         Parameters:
-            timestamp_field_name (string): Name of the field containing the timestamp for each datapoint
-            object_id_field_name (string): Name of the field containing the object ID for each datapoint
+            time_series_database (bool): Boolean indicating whether database is a time series database (default is True)
+            object_database (bool): Boolean indicating whether database is an object database (default is True)
         """
-        self.timestamp_field_name = timestamp_field_name
-        self.object_id_field_name = object_id_field_name
+        if not time_series_database and not object_database:
+            raise ValueError('Database must be a time series database, an object database, or an object time series database')
+        self.time_series_database = time_series_database
+        self.object_database = object_database
         self.data = []
 
-    def write_data(
+    # Internal method for writing object time series data (memory-database-specific)
+    def _write_data_object_time_series(
         self,
+        timestamp,
+        object_id,
         data
     ):
-        """
-        Write data to the database.
+        datum = {
+            'timestamp': timestamp,
+            'object_id': object_id
+        }
+        datum.update(data)
+        self.data.append(datum)
 
-        The data must be in the form of a dictionary with field names as keys
-        and data values as values (for a single data point) or a simple list of
-        such objects (for multiple datapoints).
-
-        Data values must be serializable/deserializable by the standard JSON
-        interface. Any other type/format conversion must be implemented by the
-        derived class. Timestamp values (if present) must be given as ISO-format
-        strings. Lists are not allowed as data values (to accommodate simple
-        implementation as a tabular database).
-
-        Parameters:
-            data (dict or list of dict): Data to write to the database
-        """
-        if not isinstance(data, list):
-            data = [data]
-        for datum in data:
-            if self.timestamp_field_name is not None and self.timestamp_field_name not in datum.keys():
-                raise ValueError('Timestamp field \'{}\' not found in datum {}'.format(
-                    self.timestamp_field_name,
-                    datum
-                ))
-            if self.object_id_field_name is not None and self.object_id_field_name not in datum.keys():
-                raise ValueError('Object ID field \'{}\' not found in datum {}'.format(
-                    self.object_id_field_name,
-                    datum
-                ))
-            self.data.append(datum)
-
-    def fetch_data(
+    # Internal method for fetching object time series data (memory-database-specific)
+    def _fetch_data_object_time_series(
         self,
-        start_time = None,
-        end_time = None,
-        object_ids = None,
-        fields = None
+        start_time,
+        end_time,
+        object_ids
     ):
-        """
-        Fetch data from the database.
-
-        Start time and end time must be ISO-format strings. If start time or end
-        time is specified and database does not have a designated timestamp
-        field, an exception will be generated.
-
-        If object IDs are specified and database does not have a designated
-        object ID field, an exception will be generated.
-
-        If fields are not specified, all fields are returned.
-
-        Parameters:
-            start_time (string): Return data with timestamps greater than or equal to this value
-            end_time (string): Return data with timestamps less than or equal to this value
-            object_ids (list): Return data for these object IDs
-            fields (list): Return data for these fields
-
-        Returns:
-            (list of dict): Datapoints from database which satisfy the criteria
-        """
-        if (start_time is not None or end_time is not None) and self.timestamp_field_name is None:
-            raise ValueError('Database does not have a designated timestamp field')
-        if object_ids is not None and self.object_id_field_name is None:
-            raise ValueError('Database does not have a designated object ID field')
-        if start_time is not None:
-            start_time_datetime = dateutil.parser.parse(start_time)
-        if end_time is not None:
-            end_time_datetime = dateutil.parser.parse(end_time)
         fetched_data = []
-        for datapoint in self.data:
-            if start_time is not None and dateutil.parser.parse(datapoint[self.timestamp_field_name]) < start_time_datetime:
+        for datum in self.data:
+            if start_time is not None and datum['timestamp'] < start_time:
                 continue
-            if end_time is not None and dateutil.parser.parse(datapoint[self.timestamp_field_name]) > end_time_datetime:
+            if end_time is not None and datum['timestamp'] > end_time:
                 continue
-            if object_ids is not None and datapoint[self.object_id_field_name] not in object_ids:
+            if object_ids is not None and datum['object_id'] not in object_ids:
                 continue
-            fetched_datapoint = {key: value for key, value in datapoint.items() if fields is None or key in fields}
-            fetched_data.append(fetched_datapoint)
+            fetched_data.append(datum)
         return fetched_data
+
+    # Internal method for deleting object time series data (memory-database-specific)
+    def _delete_data_object_time_series(
+        self,
+        start_time,
+        end_time,
+        object_ids
+    ):
+        for i in range(len(self.data) - 1, -1, -1):
+            if start_time is not None and self.data[i]['timestamp'] < start_time:
+                continue
+            if end_time is not None and self.data[i]['timestamp'] > end_time:
+                continue
+            if object_ids is not None and self.data[i]['object_id'] not in object_ids:
+                continue
+            del self.data[i]

@@ -100,7 +100,7 @@ class DatabaseConnection:
             object_ids (list of strings): Object IDs
         """
         if not self.time_series_database or not self.object_database:
-            raise ValueError('Fetching data by time interval and/or object ID only enabled for object time series databases')
+            raise ValueError('Deleting data by time interval and/or object ID only enabled for object time series databases')
         if start_time is None:
             raise ValueError('Start time must be specified for delete data operation')
         if end_time is None:
