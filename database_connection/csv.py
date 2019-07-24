@@ -4,6 +4,13 @@ import os
 import csv
 import time
 
+try:
+    import pandas as pd
+    PANDAS_INSTALLED = True
+except:
+    import csv
+    PANDAS_INSTALLED = False
+
 class DatabaseConnectionCSV(DatabaseConnection):
     """
     Class to define a DatabaseConnection to a CSV file
@@ -68,6 +75,10 @@ class DatabaseConnectionCSV(DatabaseConnection):
         self.object_database = object_database
         self.convert_to_string_functions = convert_to_string_functions
         self.convert_from_string_functions = convert_from_string_functions
+        if PANDAS_INSTALLED:
+            self._fetch_data_object_time_series = self._fetch_data_object_time_series_pandas
+        else:
+            self._fetch_data_object_time_series = self._fetch_data_object_time_series_python_native
         self.field_names = []
         if time_series_database:
             self.field_names.append('timestamp')
@@ -109,17 +120,20 @@ class DatabaseConnectionCSV(DatabaseConnection):
             writer = csv.DictWriter(fh, self.field_names)
             writer.writerow(string_dict)
 
-    # Internal method for fetching object time series data (CSV-database-specific)
-    def _fetch_data_object_time_series(
+    # Native python version of ynternal method for fetching object time series
+    # data (CSV-database-specific)
+    def _fetch_data_object_time_series_python_native(
         self,
         start_time,
         end_time,
         object_ids
     ):
+        print('Executing native Python version')
         fetched_data = []
         with open(self.path, mode = 'r', newline = '') as fh:
             reader = csv.DictReader(fh)
-            for string_dict in reader:
+            string_dicts = list(reader)
+            for string_dict in string_dicts:
                 value_dict = {field_name: self._convert_from_string(field_name, string_dict.get(field_name)) for field_name in self.field_names}
                 if start_time is not None and value_dict['timestamp'] < start_time:
                     continue
@@ -128,6 +142,27 @@ class DatabaseConnectionCSV(DatabaseConnection):
                 if object_ids is not None and value_dict['object_id'] not in object_ids:
                     continue
                 fetched_data.append(value_dict)
+        return fetched_data
+
+    # Pandas version of internal method for fetching object time series data
+    # (CSV-database-specific)
+    def _fetch_data_object_time_series_pandas(
+        self,
+        start_time,
+        end_time,
+        object_ids
+    ):
+        print('Executing Pandas version')
+        df = pd.read_csv(self.path, parse_dates = ['timestamp'])
+        boolean = True
+        if start_time is not None:
+            boolean = boolean & (df['timestamp'] > start_time)
+        if end_time is not None:
+            boolean = boolean & (df['timestamp'] < end_time)
+        if object_ids is not None:
+            boolean = boolean & (df['object_id'] in object_ids)
+        df = df[boolean]
+        fetched_data = df.to_dict('records')
         return fetched_data
 
     # Internal method for deleting object time series data (CSV-database-specific)
