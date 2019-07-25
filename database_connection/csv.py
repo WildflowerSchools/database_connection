@@ -153,7 +153,13 @@ class DatabaseConnectionCSV(DatabaseConnection):
         object_ids
     ):
         print('Executing Pandas version')
-        df = pd.read_csv(self.path, parse_dates = ['timestamp'])
+        converters = self.convert_from_string_functions
+        df = pd.read_csv(
+            self.path,
+            parse_dates = ['timestamp'],
+            converters = converters,
+            dtype = str
+        )
         boolean = True
         if start_time is not None:
             boolean = boolean & (df['timestamp'] > start_time)
@@ -161,8 +167,10 @@ class DatabaseConnectionCSV(DatabaseConnection):
             boolean = boolean & (df['timestamp'] < end_time)
         if object_ids is not None:
             boolean = boolean & (df['object_id'] in object_ids)
-        df = df[boolean]
+        df = df[boolean].reset_index(drop = True)
         fetched_data = df.to_dict('records')
+        for i in range(len(fetched_data)):
+            fetched_data[i]['timestamp'] = fetched_data[i]['timestamp'].to_pydatetime()
         return fetched_data
 
     # Internal method for deleting object time series data (CSV-database-specific)
