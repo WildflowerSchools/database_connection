@@ -157,6 +157,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         df = pd.read_csv(
             self.path,
             parse_dates = ['timestamp'],
+            infer_datetime_format = True,
             converters = converters,
             dtype = str
         )
