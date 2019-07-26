@@ -221,10 +221,12 @@ class DatabaseConnectionCSV(DatabaseConnection):
             converters = converters,
             dtype = str
         )
-        boolean = True
-        boolean = boolean & (df['timestamp'] <= start_time)
-        boolean = boolean & (df['timestamp'] >= end_time)
-        boolean = boolean & ~(df['object_id'].isin(object_ids))
+        if len(df) == 0:
+            return
+        boolean = False
+        boolean = boolean | (df['timestamp'] <= start_time)
+        boolean = boolean | (df['timestamp'] >= end_time)
+        boolean = boolean | ~(df['object_id'].isin(object_ids))
         df = df[boolean].reset_index(drop = True)
         for column_name in df.columns:
             if column_name == 'timestamp':
@@ -232,7 +234,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
             elif column_name in self.convert_to_string_functions:
                 df[column_name] = df[column_name].apply(self.convert_to_string_functions[column_name])
             else:
-                df[column_name] = df[column_name].as_type(str)
+                df[column_name] = df[column_name].astype(str)
         df.to_csv(self.path, index = False)
 
     def _convert_from_string(self, field_name, string):
