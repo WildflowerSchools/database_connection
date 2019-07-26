@@ -74,10 +74,10 @@ class DatabaseConnectionMemory(DatabaseConnection):
         object_ids
     ):
         for i in range(len(self.data) - 1, -1, -1):
-            if start_time is not None and self.data[i]['timestamp'] < start_time:
+            if self.data[i]['timestamp'] < start_time:
                 continue
-            if end_time is not None and self.data[i]['timestamp'] > end_time:
+            if self.data[i]['timestamp'] > end_time:
                 continue
-            if object_ids is not None and self.data[i]['object_id'] not in object_ids:
+            if self.data[i]['object_id'] not in object_ids:
                 continue
             del self.data[i]
