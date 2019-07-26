@@ -162,6 +162,8 @@ class DatabaseConnectionCSV(DatabaseConnection):
             converters = converters,
             dtype = str
         )
+        if len(df) == 0:
+            return []
         boolean = True
         if start_time is not None:
             boolean = boolean & (df['timestamp'] > start_time)
