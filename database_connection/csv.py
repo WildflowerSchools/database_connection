@@ -8,7 +8,6 @@ try:
     import pandas as pd
     PANDAS_INSTALLED = True
 except:
-    import csv
     PANDAS_INSTALLED = False
 
 class DatabaseConnectionCSV(DatabaseConnection):
@@ -77,8 +76,10 @@ class DatabaseConnectionCSV(DatabaseConnection):
         self.convert_from_string_functions = convert_from_string_functions
         if PANDAS_INSTALLED:
             self._fetch_data_object_time_series = self._fetch_data_object_time_series_pandas
+            self._delete_data_object_time_series = self._delete_data_object_time_series_pandas
         else:
             self._fetch_data_object_time_series = self._fetch_data_object_time_series_python_native
+            self._delete_data_object_time_series = self._delete_data_object_time_series_python_native
         self.field_names = []
         if time_series_database:
             self.field_names.append('timestamp')
@@ -128,7 +129,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        print('Executing native Python version')
+        print('Executing native Python version of _fetch_data_object_time_series')
         fetched_data = []
         with open(self.path, mode = 'r', newline = '') as fh:
             reader = csv.DictReader(fh)
@@ -152,7 +153,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        print('Executing Pandas version')
+        print('Executing Pandas version of _fetch_data_object_time_series')
         converters = self.convert_from_string_functions
         df = pd.read_csv(
             self.path,
@@ -174,13 +175,15 @@ class DatabaseConnectionCSV(DatabaseConnection):
             fetched_data[i]['timestamp'] = fetched_data[i]['timestamp'].to_pydatetime()
         return fetched_data
 
-    # Internal method for deleting object time series data (CSV-database-specific)
-    def _delete_data_object_time_series(
+    # Native Python version of internal method for deleting object time series
+    # data (CSV-database-specific)
+    def _delete_data_object_time_series_python_native(
         self,
         start_time,
         end_time,
         object_ids
     ):
+        print('Executing native Python version of _delete_data_object_time_series')
         read_fh = open(self.path, mode = 'r', newline = '')
         reader = csv.DictReader(read_fh)
         write_fh =  open('.temp.csv', 'w', newline = '')
@@ -199,6 +202,36 @@ class DatabaseConnectionCSV(DatabaseConnection):
         read_fh.close()
         time.sleep(1)
         os.replace('.temp.csv', self.path)
+
+    # Pandas version of internal method for deleting object time series data
+    # (CSV-database-specific)
+    def _delete_data_object_time_series_pandas(
+        self,
+        start_time,
+        end_time,
+        object_ids
+    ):
+        converters = self.convert_from_string_functions
+        df = pd.read_csv(
+            self.path,
+            parse_dates = ['timestamp'],
+            infer_datetime_format = True,
+            converters = converters,
+            dtype = str
+        )
+        boolean = True
+        boolean = boolean & (df['timestamp'] <= start_time)
+        boolean = boolean & (df['timestamp'] >= end_time)
+        boolean = boolean & (df['object_id'] not in object_ids)
+        df = df[boolean].reset_index(drop = True)
+        for column_name in df.columns:
+            if column_name == 'timestamp':
+                continue
+            elif column_name in self.convert_to_string_functions:
+                df[column_name] = df[column_name].apply(self.convert_to_string_functions[column_name])
+            else:
+                df[column_name] = df[column_name].as_type(str)
+        df.to_csv(self.path, index = False)
 
     def _convert_from_string(self, field_name, string):
         if string is None or string == '':
