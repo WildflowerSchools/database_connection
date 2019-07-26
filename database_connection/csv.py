@@ -129,7 +129,6 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        print('Executing native Python version of _fetch_data_object_time_series')
         fetched_data = []
         with open(self.path, mode = 'r', newline = '') as fh:
             reader = csv.DictReader(fh)
@@ -153,7 +152,6 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        print('Executing Pandas version of _fetch_data_object_time_series')
         converters = self.convert_from_string_functions
         df = pd.read_csv(
             self.path,
@@ -185,7 +183,6 @@ class DatabaseConnectionCSV(DatabaseConnection):
         end_time,
         object_ids
     ):
-        print('Executing native Python version of _delete_data_object_time_series')
         read_fh = open(self.path, mode = 'r', newline = '')
         reader = csv.DictReader(read_fh)
         write_fh =  open('.temp.csv', 'w', newline = '')
