@@ -170,7 +170,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         if end_time is not None:
             boolean = boolean & (df['timestamp'] < end_time)
         if object_ids is not None:
-            boolean = boolean & (df['object_id'] in object_ids)
+            boolean = boolean & df['object_id'].isin(object_ids)
         df = df[boolean].reset_index(drop = True)
         fetched_data = df.to_dict('records')
         for i in range(len(fetched_data)):
@@ -224,7 +224,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         boolean = True
         boolean = boolean & (df['timestamp'] <= start_time)
         boolean = boolean & (df['timestamp'] >= end_time)
-        boolean = boolean & (df['object_id'] not in object_ids)
+        boolean = boolean & ~(df['object_id'].isin(object_ids))
         df = df[boolean].reset_index(drop = True)
         for column_name in df.columns:
             if column_name == 'timestamp':
