@@ -193,11 +193,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
         writer.writeheader()
         for string_dict in reader:
             value_dict = {field_name: self._convert_from_string(field_name, string_dict.get(field_name)) for field_name in self.field_names}
-            if value_dict['timestamp'] > start_time:
-                continue
-            if value_dict['timestamp'] < end_time:
-                continue
-            if value_dict['object_id'] in object_ids:
+            if value_dict['timestamp'] > start_time and value_dict['timestamp'] < end_time and value_dict['object_id'] in object_ids:
                 continue
             writer.writerow(string_dict)
         write_fh.close()
