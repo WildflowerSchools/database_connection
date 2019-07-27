@@ -96,7 +96,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
                 if reader.fieldnames != self.field_names:
                     raise Exception('Field names in file header ({}) do not match specified field names ({})'.format(
                         reader.fieldnames,
-                        self.fieldnames
+                        self.field_names
                     ))
         else:
             # If file does not exist, create it and write header row
@@ -104,8 +104,9 @@ class DatabaseConnectionCSV(DatabaseConnection):
                 writer = csv.DictWriter(fh, fieldnames = self.field_names)
                 writer.writeheader()
 
-    # Internal method for writing object time series data (CSV-database-specific)
-    def _write_data_object_time_series(
+    # Internal method for writing single datapoint of object time series data
+    # (CSV-database-specific)
+    def _write_datapoint_object_time_series(
         self,
         timestamp,
         object_id,
@@ -121,7 +122,19 @@ class DatabaseConnectionCSV(DatabaseConnection):
             writer = csv.DictWriter(fh, self.field_names)
             writer.writerow(string_dict)
 
-    # Native python version of ynternal method for fetching object time series
+    # Internal method for writing multiple datapoints of object time series data
+    # (CSV-database-specific)
+    def _write_data_object_time_series(
+        self,
+        datapoints
+    ):
+        with open(self.path, mode = 'a', newline = '') as fh:
+            writer = csv.DictWriter(fh, self.field_names)
+            for datapoint in datapoints:
+                string_dict = {field_name: self._convert_to_string(field_name, datapoint.get(field_name)) for field_name in self.field_names}
+                writer.writerow(string_dict)
+
+    # Native python version of internal method for fetching object time series
     # data (CSV-database-specific)
     def _fetch_data_object_time_series_python_native(
         self,
