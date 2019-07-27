@@ -34,8 +34,9 @@ class DatabaseConnectionMemory(DatabaseConnection):
         self.object_database = object_database
         self.data = []
 
-    # Internal method for writing object time series data (memory-database-specific)
-    def _write_data_object_time_series(
+    # Internal method for writing single datapoint of object time series data
+    # (memory-database-specific)
+    def _write_datapoint_object_time_series(
         self,
         timestamp,
         object_id,

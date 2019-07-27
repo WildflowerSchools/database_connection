@@ -9,14 +9,14 @@ class DatabaseConnection:
     All methods must be implemented by derived classes.
     """
 
-    def write_data_object_time_series(
+    def write_datapoint_object_time_series(
         self,
         timestamp,
         object_id,
         data
     ):
         """
-        Write data for a given timestamp and object ID.
+        Write a single datapoint for a given timestamp and object ID.
 
         Timestamp must either be a native Python datetime or a string which is
         parsable by dateutil.parser.parse(). If timestamp is timezone-naive,
@@ -30,9 +30,9 @@ class DatabaseConnection:
             data (dict): Data to be written
         """
         if not self.time_series_database or not self.object_database:
-            raise ValueError('Writing data by timestamp and object ID only enabled for object time series databases')
+            raise ValueError('Writing datapoint by timestamp and object ID only enabled for object time series databases')
         timestamp = self._python_datetime_utc(timestamp)
-        self._write_data_object_time_series(
+        self._write_datapoint_object_time_series(
             timestamp,
             object_id,
             data
