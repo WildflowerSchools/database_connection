@@ -134,7 +134,7 @@ class DatabaseConnectionCSV(DatabaseConnection):
                 string_dict = {field_name: self._convert_to_string(field_name, datapoint.get(field_name)) for field_name in self.field_names}
                 writer.writerow(string_dict)
 
-    # Native python version of ynternal method for fetching object time series
+    # Native python version of internal method for fetching object time series
     # data (CSV-database-specific)
     def _fetch_data_object_time_series_python_native(
         self,
