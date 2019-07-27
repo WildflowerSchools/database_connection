@@ -49,6 +49,14 @@ class DatabaseConnectionMemory(DatabaseConnection):
         datum.update(data)
         self.data.append(datum)
 
+    # Internal method for writing multiple datapoints of object time series data
+    # (memory-database-specific)
+    def _write_data_object_time_series(
+        self,
+        datapoints
+    ):
+        self.data.extend(datapoints)
+
     # Internal method for fetching object time series data (memory-database-specific)
     def _fetch_data_object_time_series(
         self,

@@ -38,6 +38,39 @@ class DatabaseConnection:
             data
         )
 
+    def write_data_object_time_series(
+        self,
+        datapoints
+    ):
+        """
+        Write multiple datapoints with timestamps and object IDs.
+
+        Input should be a list of dicts. Each dict must contain a 'timestamp'
+        element and an 'object_id' element.
+
+        Timestamps must either be native Python datetimes or strings which are
+        parsable by dateutil.parser.parse(). If timestamp is timezone-naive,
+        timezone is assumed to be UTC.
+
+        Data must be serializable by native Python json methods.
+
+        Parameters:
+            datapoints (list of dict): Datapoints to be written
+        """
+        if not self.time_series_database or not self.object_database:
+            raise ValueError('Writing datapoint by timestamp and object ID only enabled for object time series databases')
+        parsed_datapoints = []
+        for datapoint in datapoints:
+            if 'timestamp' not in datapoint.keys():
+                raise ValueError('Each datapoint must contain a timestamp')
+            if 'object_id' not in datapoint.keys():
+                raise ValueError('Each datapoint must contain an object ID')
+            datapoint['timestamp'] = self._python_datetime_utc(datapoint['timestamp'])
+            parsed_datapoints.append(datapoint)
+        self._write_data_object_time_series(
+            parsed_datapoints
+        )
+
     def fetch_data_object_time_series(
         self,
         start_time = None,
@@ -167,7 +200,7 @@ class DatabaseConnection:
                 datetime_utc = datetime_parsed.astimezone(tz=datetime.timezone.utc)
         return datetime_utc
 
-    def _write_data_object_time_series(
+    def _write_datapoint_object_time_series(
         self,
         timestamp,
         object_id,
@@ -175,7 +208,12 @@ class DatabaseConnection:
     ):
         raise NotImplementedError('Specifics of communication with database must be implemented in child class')
 
-    # Internal method for fetching object time series data (Honeycomb-specific)
+    def _write_data_object_time_series(
+        self,
+        datapoints
+    ):
+        raise NotImplementedError('Specifics of communication with database must be implemented in child class')
+
     def _fetch_data_object_time_series(
         self,
         start_time,
@@ -184,7 +222,6 @@ class DatabaseConnection:
     ):
         raise NotImplementedError('Specifics of communication with database must be implemented in child class')
 
-    # Internal method for deleting object time series data (Honeycomb-specific)
     def _delete_data_object_time_series(
         self,
         start_time,
