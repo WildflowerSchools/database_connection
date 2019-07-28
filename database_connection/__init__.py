@@ -32,11 +32,12 @@ class DatabaseConnection:
         if not self.time_series_database or not self.object_database:
             raise ValueError('Writing datapoint by timestamp and object ID only enabled for object time series databases')
         timestamp = self._python_datetime_utc(timestamp)
-        self._write_datapoint_object_time_series(
+        return_value = self._write_datapoint_object_time_series(
             timestamp,
             object_id,
             data
         )
+        return return_value
 
     def write_data_object_time_series(
         self,
@@ -67,9 +68,10 @@ class DatabaseConnection:
                 raise ValueError('Each datapoint must contain an object ID')
             datapoint['timestamp'] = self._python_datetime_utc(datapoint['timestamp'])
             parsed_datapoints.append(datapoint)
-        self._write_data_object_time_series(
+        return_value = self._write_data_object_time_series(
             parsed_datapoints
         )
+        return return_value
 
     def fetch_data_object_time_series(
         self,
