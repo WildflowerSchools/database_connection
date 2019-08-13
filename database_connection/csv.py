@@ -175,14 +175,15 @@ class DatabaseConnectionCSV(DatabaseConnection):
         )
         if len(df) == 0:
             return []
-        boolean = True
-        if start_time is not None:
-            boolean = boolean & (df['timestamp'] > start_time)
-        if end_time is not None:
-            boolean = boolean & (df['timestamp'] < end_time)
-        if object_ids is not None:
-            boolean = boolean & df['object_id'].isin(object_ids)
-        df = df[boolean].reset_index(drop = True)
+        if start_time is not None or end_time is not None or object_ids is not None:
+            boolean = True
+            if start_time is not None:
+                boolean = boolean & (df['timestamp'] > start_time)
+            if end_time is not None:
+                boolean = boolean & (df['timestamp'] < end_time)
+            if object_ids is not None:
+                boolean = boolean & df['object_id'].isin(object_ids)
+            df = df[boolean].reset_index(drop = True)
         fetched_data = df.to_dict('records')
         for i in range(len(fetched_data)):
             fetched_data[i]['timestamp'] = fetched_data[i]['timestamp'].to_pydatetime()
