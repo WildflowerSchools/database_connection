@@ -1,8 +1,14 @@
+import os
 from setuptools import setup, find_packages
+
+BASEDIR = os.path.dirname(os.path.abspath(__file__))
 
 BASE_DEPENDENCIES = [
     'python-dateutil>=2.8.0'
 ]
+
+# allow setup.py to be run from any path
+os.chdir(os.path.normpath(BASEDIR))
 
 setup(
     name='wf-database-connection',
